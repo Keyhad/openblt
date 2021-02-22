@@ -60,7 +60,7 @@
 #define XCPLOADER_CMD_PID_RES         (0xFFu)    /**< positive response                */
 
 /** \brief Number of retries to connect to the XCP slave. */
-#define XCPLOADER_CONNECT_RETRIES     (5u)
+#define XCPLOADER_CONNECT_RETRIES     (50u)
 
 
 /****************************************************************************************
@@ -162,11 +162,11 @@ static void XcpLoaderInit(void const * settings)
   xcpMaxDto = 0;
 
   /* Reset the XCP session layer settings. */
-  xcpSettings.timeoutT1 = 1000;
+  xcpSettings.timeoutT1 = 2000;
   xcpSettings.timeoutT3 = 2000;
   xcpSettings.timeoutT4 = 10000;
-  xcpSettings.timeoutT5 = 1000;
-  xcpSettings.timeoutT6 = 50;
+  xcpSettings.timeoutT5 = 2000;
+  xcpSettings.timeoutT6 = 150;
   xcpSettings.timeoutT7 = 2000;
   xcpSettings.connectMode = 0;
   xcpSettings.seedKeyFile = NULL;
@@ -291,7 +291,7 @@ static bool XcpLoaderStart(void)
           xcpConnected = true;
           /* Connected so no need to retry. */
           break;
-        }
+        }        
       }
       /* Check if a connection with the target could be made within the finite amount
        * of retries.
