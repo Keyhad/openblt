@@ -28,6 +28,11 @@
 #ifndef LED_H
 #define LED_H
 
+#define SET_LED3_ORANGE(x)	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, x);
+#define SET_LED4_GREEN(x)	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, x);
+#define SET_LED5_RED(x)		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, x);
+#define SET_LED6_BLUE(x)	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, x);
+
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/

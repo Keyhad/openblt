@@ -51,6 +51,8 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
 									<listOptionValue builtIn="false" value="../App"/>
 									<listOptionValue builtIn="false" value="../Library/FatFS"/>
+									<listOptionValue builtIn="false" value="../Library/dhcpc"/>
+									<listOptionValue builtIn="false" value="../Library/uip"/>
 									<listOptionValue builtIn="false" value="../../../../Source"/>
 									<listOptionValue builtIn="false" value="../../../../Source/ARMCM4_STM32F4"/>
 									<listOptionValue builtIn="false" value="../../../../Source/third_party/fatfs/src"/>
@@ -170,6 +172,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32F4xx/Include"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
+									<listOptionValue builtIn="false" value="../App"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1328233875" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -228,4 +231,5 @@
 			<resource resourceType="PROJECT" workspacePath="/Boot"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>

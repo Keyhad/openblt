@@ -139,9 +139,9 @@ static const tFlashSector flashLayout[] =
    * interfaces enabled. when for example only UART is needed, than the space required
    * for the bootloader can be made a lot smaller here.
    */
-  /* { 0x08000000, 0x04000,  0},           flash sector  0 - reserved for bootloader   */
-  /* { 0x08004000, 0x04000,  1},           flash sector  1 - reserved for bootloader   */
-  { 0x08008000, 0x04000,  2},           /* flash sector  2 -  16kb                     */
+  /* { 0x08000000, 0x04000,  0},           flash sector  0 -  16kb reserved for bootloader   */
+  /* { 0x08004000, 0x04000,  1},           flash sector  1 -  16kb reserved for bootloader   */
+  /* { 0x08008000, 0x04000,  2},           flash sector  2 -  16kb reserved for bootloader   */
   { 0x0800c000, 0x04000,  3},           /* flash sector  3 -  16kb                     */
 #if (BOOT_NVM_SIZE_KB > 64)
   { 0x08010000, 0x10000,  4},           /* flash sector  4 -  64kb                     */
@@ -716,13 +716,21 @@ static blt_bool FlashEraseSectors(blt_int8u first_sector, blt_int8u last_sector)
       CopService();
       /* set the sector to erase */
       eraseInitStruct.Sector = sectorIdx;
-      /* submit the sector erase request */
-      if(HAL_FLASHEx_Erase(&eraseInitStruct, (uint32_t *)&eraseSectorError) != HAL_OK)
+
+      for (int i = 0; i < 8; i++)
       {
-        /* could not perform erase operation */
-        result = BLT_FALSE;
-        /* error detected so don't bother continuing with the loop */
-        break;
+	    /* submit the sector erase request */
+	    if(HAL_FLASHEx_Erase(&eraseInitStruct, (uint32_t *)&eraseSectorError) != HAL_OK)
+	    {
+		  /* could not perform erase operation */
+		  result = BLT_FALSE;
+		  /* error detected so don't bother continuing with the loop */
+	    }
+	    else
+	    {
+	      result = BLT_TRUE;
+	      break;
+	    }
       }
     }
 

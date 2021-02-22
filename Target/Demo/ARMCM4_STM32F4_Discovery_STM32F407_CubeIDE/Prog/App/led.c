@@ -38,11 +38,6 @@
 /** \brief Toggle interval time in milliseconds. */
 #define LED_TOGGLE_MS  (500)
 
-#define SET_LED3_ORANGE(x)	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, x);
-#define SET_LED4_GREEN(x)	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, x);
-#define SET_LED5_RED(x)		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, x);
-#define SET_LED6_BLUE(x)	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, x);
-
 /************************************************************************************//**
 ** \brief     Initializes the LED.
 ** \return    none.
@@ -55,7 +50,7 @@ void LedInit(void)
    */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 
-  SET_LED3_ORANGE(GPIO_PIN_SET);
+  //SET_LED3_ORANGE(GPIO_PIN_SET);
   SET_LED4_GREEN(GPIO_PIN_SET);
   SET_LED5_RED(GPIO_PIN_SET);
   SET_LED6_BLUE(GPIO_PIN_SET);
@@ -86,18 +81,18 @@ void LedToggle(void)
   {
     led_toggle_state = 1;
     /* turn the LED on */
-    SET_LED3_ORANGE(GPIO_PIN_RESET);
+    //SET_LED3_ORANGE(GPIO_PIN_RESET);
     SET_LED4_GREEN(GPIO_PIN_SET);
-    SET_LED5_RED(GPIO_PIN_RESET);
+    //SET_LED5_RED(GPIO_PIN_RESET);
     SET_LED6_BLUE(GPIO_PIN_SET);
   }
   else
   {
     led_toggle_state = 0;
     /* turn the LED off */
-    SET_LED3_ORANGE(GPIO_PIN_SET);
+    //SET_LED3_ORANGE(GPIO_PIN_SET);
     SET_LED4_GREEN(GPIO_PIN_RESET);
-    SET_LED5_RED(GPIO_PIN_SET);
+    //SET_LED5_RED(GPIO_PIN_SET);
     SET_LED6_BLUE(GPIO_PIN_RESET);
   }
 

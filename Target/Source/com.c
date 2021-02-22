@@ -83,7 +83,7 @@ void ComInit(void)
 #if (BOOT_COM_NET_ENABLE > 0)
   #if (BOOT_COM_NET_DEFERRED_INIT_ENABLE == 0)
   /* initialize the TCP/IP interface */
-  NetInit();
+	NetInit();
   /* set it as active */
   comActiveInterface = COM_IF_NET;
   #endif

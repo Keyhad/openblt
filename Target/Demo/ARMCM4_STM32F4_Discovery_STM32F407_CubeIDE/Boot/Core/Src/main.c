@@ -42,6 +42,8 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan2;
 
+ETH_HandleTypeDef heth;
+
 SD_HandleTypeDef hsd;
 
 /* USER CODE BEGIN PV */
@@ -52,6 +54,7 @@ SD_HandleTypeDef hsd;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART6_UART_Init(void);
+static void MX_ETH_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -90,6 +93,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART6_UART_Init();
+  MX_ETH_Init();
   /* USER CODE BEGIN 2 */
   /* Initialize the bootloader application. */
   AppInit();
@@ -190,6 +194,50 @@ void MX_CAN2_Init(void)
   /* USER CODE BEGIN CAN2_Init 2 */
 
   /* USER CODE END CAN2_Init 2 */
+
+}
+
+/**
+  * @brief ETH Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ETH_Init(void)
+{
+
+  /* USER CODE BEGIN ETH_Init 0 */
+
+  /* USER CODE END ETH_Init 0 */
+
+  /* USER CODE BEGIN ETH_Init 1 */
+
+  /* USER CODE END ETH_Init 1 */
+  heth.Instance = ETH;
+  heth.Init.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE;
+  heth.Init.Speed = ETH_SPEED_100M;
+  heth.Init.DuplexMode = ETH_MODE_FULLDUPLEX;
+  heth.Init.PhyAddress = LAN8742A_PHY_ADDRESS;
+  heth.Init.MACAddr[0] =   0x00;
+  heth.Init.MACAddr[1] =   0x80;
+  heth.Init.MACAddr[2] =   0xE1;
+  heth.Init.MACAddr[3] =   0x01;
+  heth.Init.MACAddr[4] =   0x02;
+  heth.Init.MACAddr[5] =   0x03;
+  heth.Init.RxMode = ETH_RXPOLLING_MODE;
+  heth.Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
+  heth.Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
+
+  /* USER CODE BEGIN MACADDRESS */
+
+  /* USER CODE END MACADDRESS */
+
+  if (HAL_ETH_Init(&heth) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ETH_Init 2 */
+
+  /* USER CODE END ETH_Init 2 */
 
 }
 
@@ -298,11 +346,14 @@ static void MX_GPIO_Init(void)
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOH);
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOD);
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOB);
+  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOD);
 
   /**/
   LL_GPIO_SetOutputPin(GPIOC, LL_GPIO_PIN_13);
+
+  /**/
+  LL_GPIO_ResetOutputPin(GPIOD, LL_GPIO_PIN_12|LL_GPIO_PIN_13|LL_GPIO_PIN_14|LL_GPIO_PIN_15);
 
   /**/
   GPIO_InitStruct.Pin = LL_GPIO_PIN_13;
@@ -317,6 +368,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /**/
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_12|LL_GPIO_PIN_13|LL_GPIO_PIN_14|LL_GPIO_PIN_15;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 }
 
