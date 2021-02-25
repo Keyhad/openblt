@@ -70,7 +70,7 @@
 * Function prototypes
 ****************************************************************************************/
 static blt_bool Rs232ReceiveByte(blt_int8u *data);
-static void     Rs232TransmitByte(blt_int8u data);
+//static void     Rs232TransmitByte(blt_int8u data);
 
 
 /************************************************************************************//**
@@ -232,7 +232,7 @@ static blt_bool Rs232ReceiveByte(blt_int8u *data)
 ** \return    none.
 **
 ****************************************************************************************/
-static void Rs232TransmitByte(blt_int8u data)
+void Rs232TransmitByte(blt_int8u data)
 {
   blt_int32u timeout;
 

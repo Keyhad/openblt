@@ -46,7 +46,7 @@ CAN_HandleTypeDef hcan2;
 SD_HandleTypeDef hsd;
 
 /* USER CODE BEGIN PV */
-
+extern struct netif gnetif;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,7 +69,9 @@ static void MX_USART6_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+//  gnetif.ip_addr.u_addr.ip4.addr = ip2int(192,168,86,199);
+//  gnetif.gw.u_addr.ip4.addr = ip2int(192,168,86,1);
+//  gnetif.netmask.u_addr.ip4.addr = ip2int(255,255,255,0);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,8 +101,23 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  printf("... Main start ... \n");
+  printf("... Mac ... %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n", gnetif.hwaddr[0], gnetif.hwaddr[1],
+		  gnetif.hwaddr[2], gnetif.hwaddr[3], gnetif.hwaddr[4], gnetif.hwaddr[5]);
+
+  u32_t ip = gnetif.ip_addr.u_addr.ip4.addr;
   while (1)
   {
+	if (!ip && gnetif.ip_addr.u_addr.ip4.addr) {
+	  ip = gnetif.ip_addr.u_addr.ip4.addr;
+	  // print out ip once
+	  printf("... IP  ... %d.%d.%d.%d\n",
+			  (u8_t)(ip >> 0),
+			  (u8_t)(ip >> 8),
+			  (u8_t)(ip >> 16),
+			  (u8_t)(ip >> 24));
+	}
+	//printf("Hello world ... ");
     /* Run the bootloader application. */
     MX_LWIP_Process();
     AppTask();

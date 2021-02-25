@@ -56,9 +56,11 @@
 /* USER CODE END ExternalFunctions */
 
 /* USER CODE BEGIN 0 */
+extern void Rs232TransmitByte(unsigned char data);
 int __io_putchar(int ch)
 {
-  ITM_SendChar(ch);
+  Rs232TransmitByte(ch);
+  //ITM_SendChar(ch);
   return(ch);
 }
 /* USER CODE END 0 */

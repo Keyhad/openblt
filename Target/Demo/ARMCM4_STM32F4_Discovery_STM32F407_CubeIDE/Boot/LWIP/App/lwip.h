@@ -42,6 +42,7 @@
 /* USER CODE BEGIN 0 */
 
 #define ip2int(a, b, c, d)	(((unsigned int)a << 0) + ((unsigned int)b << 8) + ((unsigned int)c << 16) + ((unsigned int)d << 24))
+//#define ip2int(a, b, c, d)	(((unsigned int)a << 24) + ((unsigned int)b << 16) + ((unsigned int)c << 8) + ((unsigned int)d << 0))
 
 /* USER CODE END 0 */
 
