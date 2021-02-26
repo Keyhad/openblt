@@ -53,6 +53,5 @@ typedef signed short    blt_int16s;                   /**< 16-bit   signed integ
 typedef unsigned int    blt_int32u;                   /**< 32-bit unsigned integer     */
 typedef signed int      blt_int32s;                   /**< 32-bit   signed integer     */
 
-
 #endif /* TYPES_H */
 /*********************************** end of types.h ************************************/

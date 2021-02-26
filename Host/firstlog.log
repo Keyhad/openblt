@@ -1,26 +1,56 @@
- [2021-02-21 15:09:46.447 Info] Starting firmware update
- [2021-02-21 15:09:46.447 Info] Specified firmware file: C:\projects\st\openblt\Target\Demo\ARMCM4_STM32F4_Discovery_STM32F407_CubeIDE\Prog\Debug\demoprog_discovery_stm32f407.srec
- [2021-02-21 15:09:46.447 Info] Using LibOpenBLT version 1.03.05
- [2021-02-21 15:09:46.448 Info] Detected session protocol: XCP version 1.0
- [2021-02-21 15:09:46.448 Info] Using session protocol settings:
- [2021-02-21 15:09:46.449 Info]   -> Timeout T1: 1000 ms
- [2021-02-21 15:09:46.449 Info]   -> Timeout T3: 2000 ms
- [2021-02-21 15:09:46.449 Info]   -> Timeout T4: 10000 ms
- [2021-02-21 15:09:46.449 Info]   -> Timeout T5: 1000 ms
- [2021-02-21 15:09:46.449 Info]   -> Timeout T6: 50 ms
- [2021-02-21 15:09:46.449 Info]   -> Timeout T7: 2000 ms
- [2021-02-21 15:09:46.449 Info]   -> Seed/Key file: libseednkey.dll
- [2021-02-21 15:09:46.449 Info]   -> Connection mode: 0
- [2021-02-21 15:09:46.450 Info] Detected transport layer: XCP on TCP/IP
- [2021-02-21 15:09:46.450 Info] Using transport layer settings:
- [2021-02-21 15:09:46.450 Info]   -> Address: 192.168.86.199
- [2021-02-21 15:09:46.450 Info]   -> Port: 1000
- [2021-02-21 15:09:46.450 Info] Initializing firmware update engine
- [2021-02-21 15:09:46.451 Info] Loading firmware data from file
- [2021-02-21 15:09:46.457 Info]   -> Number of segments: 1
- [2021-02-21 15:09:46.457 Info]   -> Base memory address: 0800C000h
- [2021-02-21 15:09:46.457 Info]   -> Total data size: 7540
- [2021-02-21 15:09:46.458 Info] Connecting to the target
- [2021-02-21 15:10:07.504 Info] First connection attempt failed
- [2021-02-21 15:10:07.504 Info] Switching to backdoor entry mode
- [2021-02-21 15:10:28.530 Info] Cancellation request detected, so stopping firmware update
+ [2021-02-26 15:03:27.362 Info] Starting firmware update
+ [2021-02-26 15:03:27.363 Info] Specified firmware file: C:\projects\st\openblt\Target\Demo\ARMCM4_STM32F4_Discovery_STM32F407_CubeIDE\Prog\Debug\demoprog_discovery_stm32f407.srec
+ [2021-02-26 15:03:27.363 Info] Using LibOpenBLT version 1.03.05
+ [2021-02-26 15:03:27.364 Info] Detected session protocol: XCP version 1.0
+ [2021-02-26 15:03:27.365 Info] Using session protocol settings:
+ [2021-02-26 15:03:27.366 Info]   -> Timeout T1: 1000 ms
+ [2021-02-26 15:03:27.366 Info]   -> Timeout T3: 2000 ms
+ [2021-02-26 15:03:27.367 Info]   -> Timeout T4: 10000 ms
+ [2021-02-26 15:03:27.367 Info]   -> Timeout T5: 1000 ms
+ [2021-02-26 15:03:27.367 Info]   -> Timeout T6: 50 ms
+ [2021-02-26 15:03:27.367 Info]   -> Timeout T7: 2000 ms
+ [2021-02-26 15:03:27.367 Info]   -> Seed/Key file: libseednkey.dll
+ [2021-02-26 15:03:27.367 Info]   -> Connection mode: 0
+ [2021-02-26 15:03:27.367 Info] Detected transport layer: XCP on RS232
+ [2021-02-26 15:03:27.367 Info] Using transport layer settings:
+ [2021-02-26 15:03:27.368 Info]   -> Device: COM6
+ [2021-02-26 15:03:27.368 Info]   -> Baudrate: 115200 bit/sec
+ [2021-02-26 15:03:27.368 Info] Initializing firmware update engine
+ [2021-02-26 15:03:27.371 Info] Loading firmware data from file
+ [2021-02-26 15:03:27.376 Info]   -> Number of segments: 1
+ [2021-02-26 15:03:27.377 Info]   -> Base memory address: 08020000h
+ [2021-02-26 15:03:27.377 Info]   -> Total data size: 7540
+ [2021-02-26 15:03:27.377 Info] Connecting to the target
+ [2021-02-26 15:03:27.471 Info] Erasing 7540 bytes starting at 08020000h
+ [2021-02-26 15:03:28.449 Info] Programming 256 bytes starting at 08020000h
+ [2021-02-26 15:03:28.543 Info] Programming 256 bytes starting at 08020100h
+ [2021-02-26 15:03:28.639 Info] Programming 256 bytes starting at 08020200h
+ [2021-02-26 15:03:28.735 Info] Programming 256 bytes starting at 08020300h
+ [2021-02-26 15:03:28.830 Info] Programming 256 bytes starting at 08020400h
+ [2021-02-26 15:03:28.927 Info] Programming 256 bytes starting at 08020500h
+ [2021-02-26 15:03:29.023 Info] Programming 256 bytes starting at 08020600h
+ [2021-02-26 15:03:29.118 Info] Programming 256 bytes starting at 08020700h
+ [2021-02-26 15:03:29.214 Info] Programming 256 bytes starting at 08020800h
+ [2021-02-26 15:03:29.310 Info] Programming 256 bytes starting at 08020900h
+ [2021-02-26 15:03:29.406 Info] Programming 256 bytes starting at 08020A00h
+ [2021-02-26 15:03:29.503 Info] Programming 256 bytes starting at 08020B00h
+ [2021-02-26 15:03:29.598 Info] Programming 256 bytes starting at 08020C00h
+ [2021-02-26 15:03:29.694 Info] Programming 256 bytes starting at 08020D00h
+ [2021-02-26 15:03:29.790 Info] Programming 256 bytes starting at 08020E00h
+ [2021-02-26 15:03:29.886 Info] Programming 256 bytes starting at 08020F00h
+ [2021-02-26 15:03:29.982 Info] Programming 256 bytes starting at 08021000h
+ [2021-02-26 15:03:30.078 Info] Programming 256 bytes starting at 08021100h
+ [2021-02-26 15:03:30.174 Info] Programming 256 bytes starting at 08021200h
+ [2021-02-26 15:03:30.270 Info] Programming 256 bytes starting at 08021300h
+ [2021-02-26 15:03:30.366 Info] Programming 256 bytes starting at 08021400h
+ [2021-02-26 15:03:30.462 Info] Programming 256 bytes starting at 08021500h
+ [2021-02-26 15:03:30.558 Info] Programming 256 bytes starting at 08021600h
+ [2021-02-26 15:03:30.654 Info] Programming 256 bytes starting at 08021700h
+ [2021-02-26 15:03:30.751 Info] Programming 256 bytes starting at 08021800h
+ [2021-02-26 15:03:30.846 Info] Programming 256 bytes starting at 08021900h
+ [2021-02-26 15:03:30.941 Info] Programming 256 bytes starting at 08021A00h
+ [2021-02-26 15:03:31.037 Info] Programming 256 bytes starting at 08021B00h
+ [2021-02-26 15:03:31.134 Info] Programming 256 bytes starting at 08021C00h
+ [2021-02-26 15:03:31.229 Info] Programming 116 bytes starting at 08021D00h
+ [2021-02-26 15:03:31.277 Info] Finishing programming session
+ [2021-02-26 15:03:32.488 Info] Firmware update completed successfully

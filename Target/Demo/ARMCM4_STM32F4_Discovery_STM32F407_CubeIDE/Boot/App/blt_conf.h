@@ -274,7 +274,7 @@
  * flash_layout.c so there is no need to compile it additionally with your
  * project.
  *           */
-#define BOOT_FLASH_CUSTOM_LAYOUT_ENABLE (0)
+#define BOOT_FLASH_CUSTOM_LAYOUT_ENABLE (1)
 
 #endif /* BLT_CONF_H */
 /*********************************** end of blt_conf.h *********************************/

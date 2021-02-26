@@ -69,9 +69,6 @@ static void MX_USART6_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-//  gnetif.ip_addr.u_addr.ip4.addr = ip2int(192,168,86,199);
-//  gnetif.gw.u_addr.ip4.addr = ip2int(192,168,86,1);
-//  gnetif.netmask.u_addr.ip4.addr = ip2int(255,255,255,0);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

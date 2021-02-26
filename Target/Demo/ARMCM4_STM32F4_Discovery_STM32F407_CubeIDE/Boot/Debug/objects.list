@@ -1,5 +1,4 @@
 "App/app.o"
-"App/flash_layout.o"
 "App/hooks.o"
 "App/led.o"
 "App/net.o"

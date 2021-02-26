@@ -58,8 +58,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-void   MX_CAN2_Init(void);
-void   MX_USART6_UART_Init(void);
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
