@@ -65,33 +65,6 @@
 				<arguments>1.0-name-matches-false-false-GCC</arguments>
 			</matcher>
 		</filter>
-		<filter>
-			<id>1607420897185</id>
-			<name>Loader/third_party</name>
-			<type>9</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-fatfs</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1607420907497</id>
-			<name>Loader/third_party/fatfs</name>
-			<type>9</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-src</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1607420921105</id>
-			<name>Loader/third_party/fatfs/src/option</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-unicode.c</arguments>
-			</matcher>
-		</filter>
 	</filteredResources>
 	<variableList>
 		<variable>

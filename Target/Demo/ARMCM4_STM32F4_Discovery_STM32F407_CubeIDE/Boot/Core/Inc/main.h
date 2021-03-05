@@ -29,7 +29,6 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-#include "stm32f4xx_hal.h"
 #include "stm32f4xx_ll_rcc.h"
 #include "stm32f4xx_ll_bus.h"
 #include "stm32f4xx_ll_system.h"
@@ -69,8 +68,18 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-void   MX_CAN2_Init(void);
-void   MX_SDIO_SD_Init(void);
+#define Reset_Pin LL_GPIO_PIN_13
+#define Reset_GPIO_Port GPIOC
+#define USER_Pin LL_GPIO_PIN_0
+#define USER_GPIO_Port GPIOA
+#define LED4__Green_Pin LL_GPIO_PIN_12
+#define LED4__Green_GPIO_Port GPIOD
+#define LED3__Orange_Pin LL_GPIO_PIN_13
+#define LED3__Orange_GPIO_Port GPIOD
+#define LED5__Red_Pin LL_GPIO_PIN_14
+#define LED5__Red_GPIO_Port GPIOD
+#define LED6__Blue_Pin LL_GPIO_PIN_15
+#define LED6__Blue_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

@@ -30,7 +30,9 @@
 * Include files
 ****************************************************************************************/
 #include "header.h"                                    /* generic header               */
+#include "hal_vector.h"
 
+//extern uint32_t hal_verctor[];
 
 /****************************************************************************************
 * Function prototypes
@@ -107,13 +109,13 @@ void BootActivate(void)
 * Local data declarations
 ****************************************************************************************/
 /** \brief UART handle to be used in API calls. */
-static UART_HandleTypeDef rs232Handle;
+//static UART_HandleTypeDef rs232Handle;
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-static unsigned char Rs232ReceiveByte(unsigned char *data);
+//static unsigned char Rs232ReceiveByte(unsigned char *data);
 
 
 /************************************************************************************//**
@@ -123,17 +125,19 @@ static unsigned char Rs232ReceiveByte(unsigned char *data);
 ****************************************************************************************/
 static void BootComRs232Init(void)
 {
-  /* Configure UART peripheral. */
-  rs232Handle.Instance = USART6;
-  rs232Handle.Init.BaudRate = BOOT_COM_RS232_BAUDRATE;
-  rs232Handle.Init.WordLength = UART_WORDLENGTH_8B;
-  rs232Handle.Init.StopBits = UART_STOPBITS_1;
-  rs232Handle.Init.Parity = UART_PARITY_NONE;
-  rs232Handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  rs232Handle.Init.Mode = UART_MODE_TX_RX;
-  rs232Handle.Init.OverSampling = UART_OVERSAMPLING_16;
-  /* Initialize the UART peripheral. */
-  HAL_UART_Init(&rs232Handle);
+//  /* Configure UART peripheral. */
+//  rs232Handle.Instance = USART6;
+//  rs232Handle.Init.BaudRate = BOOT_COM_RS232_BAUDRATE;
+//  rs232Handle.Init.WordLength = UART_WORDLENGTH_8B;
+//  rs232Handle.Init.StopBits = UART_STOPBITS_1;
+//  rs232Handle.Init.Parity = UART_PARITY_NONE;
+//  rs232Handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+//  rs232Handle.Init.Mode = UART_MODE_TX_RX;
+//  rs232Handle.Init.OverSampling = UART_OVERSAMPLING_16;
+//  /* Initialize the UART peripheral. */
+//  HAL_UART_Init(&rs232Handle);
+
+	Rs232Init();
 } /*** end of BootComRs232Init ***/
 
 
@@ -147,86 +151,90 @@ static void BootComRs232CheckActivationRequest(void)
 {
   static unsigned char xcpCtoReqPacket[BOOT_COM_RS232_RX_MAX_DATA+1];
   static unsigned char xcpCtoRxLength;
-  static unsigned char xcpCtoRxInProgress = 0;
-  static unsigned long xcpCtoRxStartTime = 0;
 
-  /* start of cto packet received? */
-  if (xcpCtoRxInProgress == 0)
-  {
-    /* store the message length when received */
-    if (Rs232ReceiveByte(&xcpCtoReqPacket[0]) == 1)
-    {
-      /* check that the length has a valid value. it should not be 0 */
-      if ( (xcpCtoReqPacket[0] > 0) &&
-           (xcpCtoReqPacket[0] <= BOOT_COM_RS232_RX_MAX_DATA) )
-      {
-        /* store the start time */
-        xcpCtoRxStartTime = TimerGet();
-        /* indicate that a cto packet is being received */
-        xcpCtoRxInProgress = 1;
-        /* reset packet data count */
-        xcpCtoRxLength = 0;
-      }
-    }
+  if (Rs232ReceivePacket(xcpCtoReqPacket, &xcpCtoRxLength)) {
+    BootActivate();
   }
-  else
-  {
-    /* store the next packet byte */
-    if (Rs232ReceiveByte(&xcpCtoReqPacket[xcpCtoRxLength+1]) == 1)
-    {
-      /* increment the packet data count */
-      xcpCtoRxLength++;
-
-      /* check to see if the entire packet was received */
-      if (xcpCtoRxLength == xcpCtoReqPacket[0])
-      {
-        /* done with cto packet reception */
-        xcpCtoRxInProgress = 0;
-
-        /* check if this was an XCP CONNECT command */
-        if ((xcpCtoReqPacket[1] == 0xff) && (xcpCtoRxLength == 2))
-        {
-          /* connection request received so start the bootloader */
-          BootActivate();
-        }
-      }
-    }
-    else
-    {
-      /* check packet reception timeout */
-      if (TimerGet() > (xcpCtoRxStartTime + RS232_CTO_RX_PACKET_TIMEOUT_MS))
-      {
-        /* cancel cto packet reception due to timeout. note that this automatically
-         * discards the already received packet bytes, allowing the host to retry.
-         */
-        xcpCtoRxInProgress = 0;
-      }
-    }
-  }
+//  static unsigned char xcpCtoRxInProgress = 0;
+//  static unsigned long xcpCtoRxStartTime = 0;
+//
+//  /* start of cto packet received? */
+//  if (xcpCtoRxInProgress == 0)
+//  {
+//    /* store the message length when received */
+//    if (Rs232ReceiveByte(&xcpCtoReqPacket[0]) == 1)
+//    {
+//      /* check that the length has a valid value. it should not be 0 */
+//      if ( (xcpCtoReqPacket[0] > 0) &&
+//           (xcpCtoReqPacket[0] <= BOOT_COM_RS232_RX_MAX_DATA) )
+//      {
+//        /* store the start time */
+//        xcpCtoRxStartTime = TimerGet();
+//        /* indicate that a cto packet is being received */
+//        xcpCtoRxInProgress = 1;
+//        /* reset packet data count */
+//        xcpCtoRxLength = 0;
+//      }
+//    }
+//  }
+//  else
+//  {
+//    /* store the next packet byte */
+//    if (Rs232ReceiveByte(&xcpCtoReqPacket[xcpCtoRxLength+1]) == 1)
+//    {
+//      /* increment the packet data count */
+//      xcpCtoRxLength++;
+//
+//      /* check to see if the entire packet was received */
+//      if (xcpCtoRxLength == xcpCtoReqPacket[0])
+//      {
+//        /* done with cto packet reception */
+//        xcpCtoRxInProgress = 0;
+//
+//        /* check if this was an XCP CONNECT command */
+//        if ((xcpCtoReqPacket[1] == 0xff) && (xcpCtoRxLength == 2))
+//        {
+//          /* connection request received so start the bootloader */
+//          BootActivate();
+//        }
+//      }
+//    }
+//    else
+//    {
+//      /* check packet reception timeout */
+//      if (TimerGet() > (xcpCtoRxStartTime + RS232_CTO_RX_PACKET_TIMEOUT_MS))
+//      {
+//        /* cancel cto packet reception due to timeout. note that this automatically
+//         * discards the already received packet bytes, allowing the host to retry.
+//         */
+//        xcpCtoRxInProgress = 0;
+//      }
+//    }
+//  }
 } /*** end of BootComRs232CheckActivationRequest ***/
 
 
-/************************************************************************************//**
-** \brief     Receives a communication interface byte if one is present.
-** \param     data Pointer to byte where the data is to be stored.
-** \return    1 if a byte was received, 0 otherwise.
-**
-****************************************************************************************/
-static unsigned char Rs232ReceiveByte(unsigned char *data)
-{
-  HAL_StatusTypeDef result;
-
-  /* receive a byte in a non-blocking manner */
-  result = HAL_UART_Receive(&rs232Handle, data, 1, 0);
-  /* process the result */
-  if (result == HAL_OK)
-  {
-    /* success */
-    return 1;
-  }
-  /* error occurred */
-  return 0;
-} /*** end of Rs232ReceiveByte ***/
+///************************************************************************************//**
+//** \brief     Receives a communication interface byte if one is present.
+//** \param     data Pointer to byte where the data is to be stored.
+//** \return    1 if a byte was received, 0 otherwise.
+//**
+//****************************************************************************************/
+//static unsigned char Rs232ReceiveByte(unsigned char *data)
+//{
+//  HAL_StatusTypeDef result;
+//
+//  /* receive a byte in a non-blocking manner */
+//  result = HAL_UART_Receive(&rs232Handle, data, 1, 0);
+//  /* process the result */
+//  if (result == HAL_OK)
+//  {
+//    /* success */
+//    return 1;
+//  }
+//  /* error occurred */
+//  return 0;
+//} /*** end of Rs232ReceiveByte ***/
 #endif /* BOOT_COM_RS232_ENABLE > 0 */
 
 

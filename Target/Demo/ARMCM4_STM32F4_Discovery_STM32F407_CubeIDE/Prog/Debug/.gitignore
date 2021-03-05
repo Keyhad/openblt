@@ -5,3 +5,5 @@
 /objects.list
 /objects.mk
 /sources.mk
+/LWIP/
+/Middlewares/

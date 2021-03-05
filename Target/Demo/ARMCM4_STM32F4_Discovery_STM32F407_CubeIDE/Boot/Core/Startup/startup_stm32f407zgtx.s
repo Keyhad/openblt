@@ -54,7 +54,6 @@ defined in linker script */
  * @param  None
  * @retval : None
 */
-
     .section  .text.Reset_Handler
   .weak  Reset_Handler
   .type  Reset_Handler, %function

@@ -31,7 +31,6 @@
 ****************************************************************************************/
 #include "boot.h"                                /* bootloader generic header          */
 
-
 /************************************************************************************//**
 ** \brief     Initializes the bootloader application. Should be called once during
 **            software program initialization.

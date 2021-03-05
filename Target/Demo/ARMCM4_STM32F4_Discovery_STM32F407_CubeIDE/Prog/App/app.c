@@ -31,7 +31,6 @@
 ****************************************************************************************/
 #include "header.h"                                    /* generic header               */
 
-
 /************************************************************************************//**
 ** \brief     Initializes the user program application. Should be called once during
 **            software program initialization.
@@ -45,7 +44,7 @@ void AppInit(void)
   /* Initialize the led driver. */
   LedInit();
   /* initialize the bootloader interface */
-  BootComInit();
+  //BootComInit();
 } /*** end of AppInit ***/
 
 

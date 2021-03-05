@@ -1,5 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
+# Toolchain: GNU Tools for STM32 (9-2020-q2-update)
 ################################################################################
 
 -include ../makefile.init
@@ -8,23 +9,9 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include Middlewares/Third_Party/LwIP/src/netif/ppp/subdir.mk
--include Middlewares/Third_Party/LwIP/src/netif/subdir.mk
--include Middlewares/Third_Party/LwIP/src/core/ipv6/subdir.mk
--include Middlewares/Third_Party/LwIP/src/core/ipv4/subdir.mk
--include Middlewares/Third_Party/LwIP/src/core/subdir.mk
--include Middlewares/Third_Party/LwIP/src/apps/tftp/subdir.mk
--include Middlewares/Third_Party/LwIP/src/apps/mqtt/subdir.mk
--include Middlewares/Third_Party/LwIP/src/apps/http/subdir.mk
--include Middlewares/Third_Party/LwIP/src/api/subdir.mk
--include Loader/third_party/fatfs/src/option/subdir.mk
--include Loader/third_party/fatfs/src/subdir.mk
 -include Loader/ARMCM4_STM32F4/GCC/subdir.mk
 -include Loader/ARMCM4_STM32F4/subdir.mk
 -include Loader/subdir.mk
--include Library/FatFS/subdir.mk
--include LWIP/Target/subdir.mk
--include LWIP/App/subdir.mk
 -include Drivers/STM32F4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
@@ -45,6 +32,12 @@ endif
 endif
 
 -include ../makefile.defs
+
+OPTIONAL_TOOL_DEPS := \
+$(wildcard ../makefile.defs) \
+$(wildcard ../makefile.init) \
+$(wildcard ../makefile.targets) \
+
 
 BUILD_ARTIFACT_NAME := openblt_discovery_stm32f407
 BUILD_ARTIFACT_EXTENSION := elf
@@ -72,22 +65,22 @@ all: main-build
 main-build: openblt_discovery_stm32f407.elf secondary-outputs
 
 # Tool invocations
-openblt_discovery_stm32f407.elf: $(OBJS) $(USER_OBJS) ../STM32F407ZGTX.ld
-	arm-none-eabi-gcc -o "openblt_discovery_stm32f407.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"../STM32F407ZGTX.ld" --specs=nosys.specs -Wl,-Map="Boot.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+openblt_discovery_stm32f407.elf: $(OBJS) $(USER_OBJS) ../STM32F407ZGTX.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "openblt_discovery_stm32f407.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"../STM32F407ZGTX.ld" --specs=nosys.specs -Wl,-Map="openblt_discovery_stm32f407.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-default.size.stdout: $(EXECUTABLES)
+default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	arm-none-eabi-size  $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-openblt_discovery_stm32f407.list: $(EXECUTABLES)
+openblt_discovery_stm32f407.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "openblt_discovery_stm32f407.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-openblt_discovery_stm32f407.srec: $(EXECUTABLES)
+openblt_discovery_stm32f407.srec: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	arm-none-eabi-objcopy  -O srec $(EXECUTABLES) "openblt_discovery_stm32f407.srec"
 	@echo 'Finished building: $@'
 	@echo ' '
