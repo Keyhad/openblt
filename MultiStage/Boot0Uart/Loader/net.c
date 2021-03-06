@@ -31,9 +31,9 @@
 ****************************************************************************************/
 #include "boot.h"                                /* bootloader generic header          */
 #if (BOOT_COM_NET_ENABLE > 0)
-#include "netdev.h"
-#include "uip.h"
-#include "uip_arp.h"
+//#include "netdev.h"
+//#include "uip.h"
+//#include "uip_arp.h"
 #endif
 
 

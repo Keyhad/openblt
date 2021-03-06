@@ -220,8 +220,8 @@
 
 /* Section 2: PHY configuration section */
 
-/* LAN8720_PHY_ADDRESS Address*/
-#define LAN8720_PHY_ADDRESS           0U
+/* LAN8720_PHY_ADDRESS_PHY_ADDRESS Address*/
+#define LAN8720_PHY_ADDRESS_PHY_ADDRESS           0U
 /* PHY Reset delay these values are based on a 1 ms Systick interrupt*/
 #define PHY_RESET_DELAY                 0x00000FFFU
 /* PHY Configuration delay */

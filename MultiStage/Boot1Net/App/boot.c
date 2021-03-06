@@ -76,6 +76,7 @@ void BootComCheckActivationRequest(void)
 #if (BOOT_COM_CAN_ENABLE > 0)
   BootComCanCheckActivationRequest();
 #endif
+  //BootComNetCheckActivationRequest();
 } /*** end of BootComCheckActivationRequest ***/
 
 
@@ -213,7 +214,15 @@ static void BootComRs232CheckActivationRequest(void)
 //  }
 } /*** end of BootComRs232CheckActivationRequest ***/
 
-
+//static void BootComNetCheckActivationRequest(void)
+//{
+//  static unsigned char xcpCtoReqPacket[BOOT_COM_RS232_RX_MAX_DATA+1];
+//  static unsigned char xcpCtoRxLength;
+//
+//  if (NetReceivePacket(xcpCtoReqPacket, &xcpCtoRxLength)) {
+//    BootActivate();
+//  }
+//}
 ///************************************************************************************//**
 //** \brief     Receives a communication interface byte if one is present.
 //** \param     data Pointer to byte where the data is to be stored.

@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "header.h"
 #include "hal_vector.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -130,15 +131,15 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  printf("... Main2 start ... \n");
+  printf("... Stage2 start ... \n");
   printf("... Mac ... %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n", gnetif.hwaddr[0], gnetif.hwaddr[1],
 		  gnetif.hwaddr[2], gnetif.hwaddr[3], gnetif.hwaddr[4], gnetif.hwaddr[5]);
 
-  u32_t ip = gnetif.ip_addr.u_addr.ip4.addr;
+  u32_t ip = gnetif.ip_addr.addr;
   while (1)
   {
-	if (!ip && gnetif.ip_addr.u_addr.ip4.addr) {
-	  ip = gnetif.ip_addr.u_addr.ip4.addr;
+	if (!ip && gnetif.ip_addr.addr) {
+	  ip = gnetif.ip_addr.addr;
 	  // print out ip once
 	  printf("... IP  ... %d.%d.%d.%d\n",
 			  (u8_t)(ip >> 0),
@@ -146,7 +147,6 @@ int main(void)
 			  (u8_t)(ip >> 16),
 			  (u8_t)(ip >> 24));
 	}
-	//printf("Hello world ... ");
     /* Run the bootloader application. */
     MX_LWIP_Process();
     AppTask();
