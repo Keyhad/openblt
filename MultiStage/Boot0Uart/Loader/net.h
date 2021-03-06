@@ -1,12 +1,12 @@
 /************************************************************************************//**
-* \file         Demo/ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE/Prog/App/app.c
-* \brief        User program application source file.
-* \ingroup      Prog_ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE
+* \file         Source/net.h
+* \brief        Bootloader TCP/IP network communication interface header file.
+* \ingroup      Core
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
 *----------------------------------------------------------------------------------------
-*   Copyright (c) 2020  by Feaser    http://www.feaser.com    All rights reserved
+*   Copyright (c) 2014  by Feaser    http://www.feaser.com    All rights reserved
 *
 *----------------------------------------------------------------------------------------
 *                            L I C E N S E
@@ -25,43 +25,56 @@
 *
 * \endinternal
 ****************************************************************************************/
+#ifndef NET_H
+#define NET_H
+
+#if (BOOT_COM_NET_ENABLE > 0)
+/****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+#ifndef UIP_APPCALL
+#define UIP_APPCALL NetApp
+#endif /* UIP_APPCALL */
+
 
 /****************************************************************************************
-* Include files
+* Type definitions
 ****************************************************************************************/
-#include "header.h"                                    /* generic header               */
-#include "lwip/apps/httpd.h"
-
-/************************************************************************************//**
-** \brief     Initializes the user program application. Should be called once during
-**            software program initialization.
-** \return    none.
-**
-****************************************************************************************/
-void AppInit(void)
+/** \brief Define the uip_tcp_appstate_t datatype. This is the state of our tcp/ip
+ *         application, and the memory required for this state is allocated together
+ *         with each TCP connection. One application state for each TCP connection.
+ */
+typedef struct net_state
 {
-  /* Initialize the timer driver. */
-  TimerInit();
-  /* Initialize the led driver. */
-  LedInit();
-  /* Http webserver Init */
-  httpd_init();
-} /*** end of AppInit ***/
+  blt_int32u dto_counter;
+  blt_int8u  dto_data[BOOT_COM_NET_TX_MAX_DATA + 4]; /* +4 for counter overhead */
+  blt_int16u dto_len;
+  blt_bool   dto_tx_req;
+  blt_bool   dto_tx_pending;
+} uip_tcp_appstate_t;
 
 
-/************************************************************************************//**
-** \brief     Task function of the user program application. Should be called
-**            continuously in the program loop.
-** \return    none.
-**
+/****************************************************************************************
+* Function prototypes
 ****************************************************************************************/
-void AppTask(void)
+void     NetInit(void);
+#if (BOOT_COM_NET_DEFERRED_INIT_ENABLE == 1)
+void     NetDeferredInit(void);
+#endif
+void     NetApp(void);
+void     NetTransmitPacket(blt_int8u *data, blt_int8u len);
+blt_bool NetReceivePacket(blt_int8u *data, blt_int8u *len);
+
+#else /* BOOT_COM_NET_ENABLE > 0 */
+
+typedef struct net_state
 {
-  /* Toggle LED with a fixed frequency. */
-  LedToggle();
-  /* check for bootloader activation request */
-  BootComCheckActivationRequest();
-} /*** end of AppTask ***/
+  blt_int8u  unused;
+} uip_tcp_appstate_t;
 
+#define UIP_APPCALL();
 
-/*********************************** end of app.c **************************************/
+#endif /* BOOT_COM_NET_ENABLE > 0 */
+
+#endif /* NET_H */
+/*********************************** end of net.h **************************************/

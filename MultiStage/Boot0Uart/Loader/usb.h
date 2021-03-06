@@ -1,12 +1,12 @@
 /************************************************************************************//**
-* \file         Demo/ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE/Prog/App/header.h
-* \brief        Generic header file.
-* \ingroup      Prog_ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE
+* \file         Source/usb.h
+* \brief        Bootloader USB communication interface header file.
+* \ingroup      Core
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
 *----------------------------------------------------------------------------------------
-*   Copyright (c) 2020  by Feaser    http://www.feaser.com    All rights reserved
+*   Copyright (c) 2016  by Feaser    http://www.feaser.com    All rights reserved
 *
 *----------------------------------------------------------------------------------------
 *                            L I C E N S E
@@ -20,24 +20,33 @@
 * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 * PURPOSE. See the GNU General Public License for more details.
 *
-* You have received a copy of the GNU General Public License along with OpenBLT. It 
+* You have received a copy of the GNU General Public License along with OpenBLT. It
 * should be located in ".\Doc\license.html". If not, contact Feaser to obtain a copy.
-* 
+*
 * \endinternal
 ****************************************************************************************/
-#ifndef HEADER_H
-#define HEADER_H
+#ifndef USB_H
+#define USB_H
+
+#if (BOOT_COM_USB_ENABLE > 0)
+/****************************************************************************************
+* Function prototypes
+****************************************************************************************/
+void     UsbInit(void);
+void     UsbFree(void);
+void     UsbTransmitPacket(blt_int8u *data, blt_int8u len);
+blt_bool UsbReceivePacket(blt_int8u *data, blt_int8u *len);
 
 /****************************************************************************************
-* Include files
+* Hook functions
 ****************************************************************************************/
-#include "../../Boot0Uart/App/blt_conf.h"                   /* bootloader configuration     */
-#include "stm32f4xx.h"                                 /* STM32 registers              */
-#include "app.h"                                       /* Application header           */
-#include "boot.h"                                      /* bootloader interface driver  */
-#include "led.h"                                       /* LED driver                   */
-#include "timer.h"                                     /* Timer driver                 */
+extern void UsbEnterLowPowerModeHook(void);
+extern void UsbLeaveLowPowerModeHook(void);
+extern void UsbConnectHook(blt_bool connect);
 
 
-#endif /* HEADER_H */
-/*********************************** end of header.h ***********************************/
+#endif /* BOOT_COM_USB_ENABLE > 0 */
+
+
+#endif /* USB_H */
+/*********************************** end of usb.h **************************************/

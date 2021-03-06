@@ -1,12 +1,12 @@
 /************************************************************************************//**
-* \file         Demo/ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE/Prog/App/header.h
-* \brief        Generic header file.
-* \ingroup      Prog_ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE
+* \file         Source/nvm.h
+* \brief        Bootloader non-volatile memory driver header file.
+* \ingroup      Core
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
 *----------------------------------------------------------------------------------------
-*   Copyright (c) 2020  by Feaser    http://www.feaser.com    All rights reserved
+*   Copyright (c) 2016  by Feaser    http://www.feaser.com    All rights reserved
 *
 *----------------------------------------------------------------------------------------
 *                            L I C E N S E
@@ -20,24 +20,37 @@
 * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 * PURPOSE. See the GNU General Public License for more details.
 *
-* You have received a copy of the GNU General Public License along with OpenBLT. It 
+* You have received a copy of the GNU General Public License along with OpenBLT. It
 * should be located in ".\Doc\license.html". If not, contact Feaser to obtain a copy.
-* 
+*
 * \endinternal
 ****************************************************************************************/
-#ifndef HEADER_H
-#define HEADER_H
+#ifndef NVM_H
+#define NVM_H
 
 /****************************************************************************************
-* Include files
+* Function prototypes
 ****************************************************************************************/
-#include "../../Boot0Uart/App/blt_conf.h"                   /* bootloader configuration     */
-#include "stm32f4xx.h"                                 /* STM32 registers              */
-#include "app.h"                                       /* Application header           */
-#include "boot.h"                                      /* bootloader interface driver  */
-#include "led.h"                                       /* LED driver                   */
-#include "timer.h"                                     /* Timer driver                 */
+void     NvmInit(void);
+void     NvmReinit(void);
+blt_bool NvmWrite(blt_addr addr, blt_int32u len, blt_int8u *data);
+blt_bool NvmErase(blt_addr addr, blt_int32u len);
+blt_bool NvmVerifyChecksum(void);
+blt_addr NvmGetUserProgBaseAddress(void);
+blt_bool NvmDone(void);
 
 
-#endif /* HEADER_H */
-/*********************************** end of header.h ***********************************/
+/****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+/* return codes for hook function NvmWrite/Erase */
+/** \brief Return code for success. */
+#define BLT_NVM_ERROR                   (0x00)
+/** \brief Return code for error. */
+#define BLT_NVM_OKAY                    (0x01)
+/** \brief Return code for not in range. */
+#define BLT_NVM_NOT_IN_RANGE            (0x02)
+
+
+#endif /* NVM_H */
+/*********************************** end of nvm.h **************************************/

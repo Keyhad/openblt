@@ -1,12 +1,12 @@
 /************************************************************************************//**
-* \file         Demo/ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE/Prog/App/app.c
-* \brief        User program application source file.
-* \ingroup      Prog_ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE
+* \file         Source/boot.c
+* \brief        Bootloader core module source file.
+* \ingroup      Core
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
 *----------------------------------------------------------------------------------------
-*   Copyright (c) 2020  by Feaser    http://www.feaser.com    All rights reserved
+*   Copyright (c) 2011  by Feaser    http://www.feaser.com    All rights reserved
 *
 *----------------------------------------------------------------------------------------
 *                            L I C E N S E
@@ -29,39 +29,67 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "header.h"                                    /* generic header               */
-#include "lwip/apps/httpd.h"
+#include "boot.h"                                /* bootloader generic header          */
+
 
 /************************************************************************************//**
-** \brief     Initializes the user program application. Should be called once during
-**            software program initialization.
-** \return    none.
+** \brief     Initializes the bootloader core.
+** \return    none
 **
 ****************************************************************************************/
-void AppInit(void)
+void BootInit(void)
 {
-  /* Initialize the timer driver. */
+  /* initialize the CPU */
+  CpuInit();
+  /* initialize the watchdog */
+  CopInit();
+  /* initialize the millisecond timer */
   TimerInit();
-  /* Initialize the led driver. */
-  LedInit();
-  /* Http webserver Init */
-  httpd_init();
-} /*** end of AppInit ***/
+  /* initialize the non-volatile memory driver */
+  NvmInit();
+#if (BOOT_FILE_SYS_ENABLE > 0)
+  /* initialize the file system module */
+  FileInit();
+#endif
+#if (BOOT_COM_ENABLE > 0)
+  /* initialize the communication module */
+  ComInit();
+#endif
+#if (ADDON_GATEWAY_MOD_ENABLE > 0)
+  /* initialize the gateway module */
+  GatewayInit();
+#endif
+  /* initialize the backdoor entry */
+  BackDoorInit();
+} /*** end of BootInit ***/
 
 
 /************************************************************************************//**
-** \brief     Task function of the user program application. Should be called
-**            continuously in the program loop.
-** \return    none.
+** \brief     Task function of the bootloader core that drives the program.
+** \return    none
 **
 ****************************************************************************************/
-void AppTask(void)
+void BootTask(void)
 {
-  /* Toggle LED with a fixed frequency. */
-  LedToggle();
-  /* check for bootloader activation request */
-  BootComCheckActivationRequest();
-} /*** end of AppTask ***/
+  /* service the watchdog */
+  CopService();
+  /* update the millisecond timer */
+  TimerUpdate();
+#if (BOOT_FILE_SYS_ENABLE > 0)
+  /* call worker task for updating firmware from locally attached file storage */
+  FileTask();
+#endif /* BOOT_FILE_SYS_ENABLE > 0 */
+#if (BOOT_COM_ENABLE > 0)
+  /* process possibly pending communication data */
+  ComTask();
+#endif
+#if (ADDON_GATEWAY_MOD_ENABLE > 0)
+  /* run the gateway */
+  GatewayTask();
+#endif
+  /* control the backdoor */
+  BackDoorCheck();
+} /*** end of BootTask ***/
 
 
-/*********************************** end of app.c **************************************/
+/*********************************** end of boot.c *************************************/

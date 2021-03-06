@@ -1,12 +1,12 @@
 /************************************************************************************//**
-* \file         Demo/ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE/Prog/App/header.h
-* \brief        Generic header file.
-* \ingroup      Prog_ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE
+* \file         Source/assert.c
+* \brief        Bootloader assertion module source file.
+* \ingroup      Core
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
 *----------------------------------------------------------------------------------------
-*   Copyright (c) 2020  by Feaser    http://www.feaser.com    All rights reserved
+*   Copyright (c) 2011  by Feaser    http://www.feaser.com    All rights reserved
 *
 *----------------------------------------------------------------------------------------
 *                            L I C E N S E
@@ -20,24 +20,37 @@
 * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 * PURPOSE. See the GNU General Public License for more details.
 *
-* You have received a copy of the GNU General Public License along with OpenBLT. It 
+* You have received a copy of the GNU General Public License along with OpenBLT. It
 * should be located in ".\Doc\license.html". If not, contact Feaser to obtain a copy.
-* 
+*
 * \endinternal
 ****************************************************************************************/
-#ifndef HEADER_H
-#define HEADER_H
 
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "../../Boot0Uart/App/blt_conf.h"                   /* bootloader configuration     */
-#include "stm32f4xx.h"                                 /* STM32 registers              */
-#include "app.h"                                       /* Application header           */
-#include "boot.h"                                      /* bootloader interface driver  */
-#include "led.h"                                       /* LED driver                   */
-#include "timer.h"                                     /* Timer driver                 */
+#include "boot.h"                                /* bootloader generic header          */
 
 
-#endif /* HEADER_H */
-/*********************************** end of header.h ***********************************/
+#ifndef NDEBUG
+/************************************************************************************//**
+** \brief     Called when a runtime assertion failed. It stores information about where
+**            the assertion occurred and halts the software program.
+** \param     file   Name of the source file where the assertion occurred.
+** \param     line   Linenumber in the source file where the assertion occurred.
+** \return    none
+**
+****************************************************************************************/
+void AssertFailure(blt_char *file, blt_int32u line)
+{
+  /* hang the software so that it requires a hard reset */
+  for (;;)
+  {
+    /* keep servicing the watchdog so that this one does not cause a reset */
+    CopService();
+  }
+} /*** end of AssertFailure ***/
+#endif /* !NDEBUG */
+
+
+/*********************************** end of assert.c ***********************************/

@@ -45,7 +45,7 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 extern const void* volatile _hal_vector_[];
-extern void     Rs232TransmitByte(blt_int8u data);
+extern void Rs232TransmitByte(blt_int8u data);
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

@@ -1,12 +1,12 @@
 /************************************************************************************//**
-* \file         Demo/ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE/Prog/App/app.c
-* \brief        User program application source file.
-* \ingroup      Prog_ARMCM4_STM32F4_Olimex_STM32E407_CubeIDE
+* \file         Source/cop.c
+* \brief        Bootloader watchdog module source file.
+* \ingroup      Core
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
 *----------------------------------------------------------------------------------------
-*   Copyright (c) 2020  by Feaser    http://www.feaser.com    All rights reserved
+*   Copyright (c) 2011  by Feaser    http://www.feaser.com    All rights reserved
 *
 *----------------------------------------------------------------------------------------
 *                            L I C E N S E
@@ -29,39 +29,42 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "header.h"                                    /* generic header               */
-#include "lwip/apps/httpd.h"
+#include "boot.h"                                /* bootloader generic header          */
 
-/************************************************************************************//**
-** \brief     Initializes the user program application. Should be called once during
-**            software program initialization.
-** \return    none.
-**
+
+/****************************************************************************************
+* Hook functions
 ****************************************************************************************/
-void AppInit(void)
-{
-  /* Initialize the timer driver. */
-  TimerInit();
-  /* Initialize the led driver. */
-  LedInit();
-  /* Http webserver Init */
-  httpd_init();
-} /*** end of AppInit ***/
+#if (BOOT_COP_HOOKS_ENABLE > 0)
+extern void CopInitHook(void);
+extern void CopServiceHook(void);
+#endif
 
 
 /************************************************************************************//**
-** \brief     Task function of the user program application. Should be called
-**            continuously in the program loop.
-** \return    none.
+** \brief     Watchdog initialization function.
+** \return    none
 **
 ****************************************************************************************/
-void AppTask(void)
+void CopInit(void)
 {
-  /* Toggle LED with a fixed frequency. */
-  LedToggle();
-  /* check for bootloader activation request */
-  BootComCheckActivationRequest();
-} /*** end of AppTask ***/
+#if (BOOT_COP_HOOKS_ENABLE > 0)
+  CopInitHook();
+#endif
+} /*** end of CopInit ***/
 
 
-/*********************************** end of app.c **************************************/
+/************************************************************************************//**
+** \brief     Watchdog service function to prevent the watchdog from timing out.
+** \return    none
+**
+****************************************************************************************/
+void CopService(void)
+{
+#if (BOOT_COP_HOOKS_ENABLE > 0)
+  CopServiceHook();
+#endif
+} /*** end of CopService ***/
+
+
+/*********************************** end of cop.c **************************************/
