@@ -101,7 +101,7 @@
  * configuring the IP address, network mask and gateway address are no longer needed.
  */
 /** \brief Enable/disable the NET transport layer. */
-#define BOOT_COM_NET_ENABLE               (0)
+#define BOOT_COM_NET_ENABLE               (1)
 /** \brief Configure number of bytes in the target->host data packet. */
 #define BOOT_COM_NET_TX_MAX_DATA          (64)
 /** \brief Configure number of bytes in the host->target data packet. */

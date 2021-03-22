@@ -31,10 +31,14 @@
 ****************************************************************************************/
 #include "boot.h"                                /* bootloader generic header          */
 #if (BOOT_COM_NET_ENABLE > 0)
-//#include "netdev.h"
-//#include "uip.h"
-//#include "uip_arp.h"
+  #include "lwip/err.h"
+  #include "lwip/def.h"
+  #include "lwip/altcp.h"
+  #include "lwip/altcp_tcp.h"
 #endif
+
+#include "net.h"
+#include <string.h>
 
 
 #if (BOOT_COM_NET_ENABLE > 0)
@@ -95,6 +99,341 @@ static blt_bool netInitializationDeferred = BLT_TRUE;
 static blt_bool netInitializationDeferred = BLT_FALSE;
 #endif
 
+#define NET_ALLOC_HTTP_STATE() (struct net_state *)mem_malloc(sizeof(struct net_state))
+#define NET_FREE_NET_STATE(x) mem_free(x)
+#define NET_POLL_INTERVAL	4 // x500ms
+
+/* Return values for http_send_*() */
+#define NET_DATA_TO_SEND_FREED    3
+#define NET_DATA_TO_SEND_BREAK    2
+#define NET_DATA_TO_SEND_CONTINUE 1
+#define NET_NO_DATA_TO_SEND       0
+
+
+static err_t net_accept(void *arg, struct altcp_pcb *tpcb, err_t err);
+static err_t net_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, err_t err);
+static void net_err(void *arg, err_t err);
+static err_t net_poll(void *arg, struct altcp_pcb *pcb);
+static err_t net_sent(void *arg, struct altcp_pcb *pcb, u16_t len);
+static err_t net_close_or_abort_conn(struct altcp_pcb *pcb, struct net_state *ns, u8_t abort_conn);
+static err_t net_write(struct altcp_pcb *pcb, const void *ptr, u16_t *length, u8_t apiflags);
+
+
+/** Free a struct net_state.
+ * Also frees the file data if dynamic.
+ */
+static void
+net_state_free(struct net_state *ns)
+{
+  if (ns != NULL) {
+    //net_state_eof(ns);
+    //ns_remove_connection(ns);
+    NET_FREE_NET_STATE(ns);
+  }
+}
+
+/**
+ * The connection shall be actively closed (using RST to close from fault states).
+ * Reset the sent- and recv-callbacks.
+ *
+ * @param pcb the tcp pcb to reset callbacks
+ * @param hs connection state to free
+ */
+static err_t
+net_close_or_abort_conn(struct altcp_pcb *pcb, struct net_state *ns, u8_t abort_conn)
+{
+  err_t err;
+  LWIP_DEBUGF(NET_DEBUG, ("Closing connection %p\n", (void *)pcb));
+
+  altcp_arg(pcb, NULL);
+  altcp_recv(pcb, NULL);
+  altcp_err(pcb, NULL);
+  altcp_poll(pcb, NULL, 0);
+  altcp_sent(pcb, NULL);
+  if (ns != NULL) {
+    net_state_free(ns);
+  }
+
+  if (abort_conn) {
+    altcp_abort(pcb);
+    return ERR_OK;
+  }
+  err = altcp_close(pcb);
+  if (err != ERR_OK) {
+    LWIP_DEBUGF(NET_DEBUG, ("Error %d closing %p\n", err, (void *)pcb));
+    /* error closing, try again later in poll */
+    altcp_poll(pcb, net_poll, NET_POLL_INTERVAL);
+  }
+  return err;
+}
+
+/**
+ * The connection shall be actively closed.
+ * Reset the sent- and recv-callbacks.
+ *
+ * @param pcb the tcp pcb to reset callbacks
+ * @param hs connection state to free
+ */
+static err_t
+net_close_conn(struct altcp_pcb *pcb, struct net_state *ns)
+{
+  return net_close_or_abort_conn(pcb, ns, 0);
+}
+
+/** Initialize a struct http_state.
+ */
+static void
+net_state_init(struct net_state *ns)
+{
+  /* Initialize the structure. */
+  memset(ns, 0, sizeof(struct net_state));
+  ns->dto_counter = 1;
+}
+
+/** Allocate a struct net_state. */
+static struct net_state *
+net_state_alloc(void)
+{
+  struct net_state *ret = NET_ALLOC_HTTP_STATE();
+  if (ret != NULL) {
+    net_state_init(ret);
+    /*net_add_connection(ret);*/
+  }
+  return ret;
+}
+
+static err_t net_accept(void *arg, struct altcp_pcb *pcb, err_t err)
+{
+  struct net_state *ns;
+  LWIP_UNUSED_ARG(err);
+  LWIP_UNUSED_ARG(arg);
+  LWIP_DEBUGF(NET_DEBUG, ("net_accept %p / %p\n", (void *)pcb, arg));
+
+  if ((err != ERR_OK) || (pcb == NULL)) {
+	return ERR_VAL;
+  }
+
+  /* Set priority */
+  altcp_setprio(pcb, TCP_PRIO_MIN);
+
+  /* Allocate memory for the structure that holds the state of the
+	 connection - initialized by that function. */
+
+  ns = net_state_alloc();
+  if (ns == NULL) {
+	LWIP_DEBUGF(NET_DEBUG, ("net_accept: Out of memory, RST\n"));
+	return ERR_MEM;
+  }
+  ns->netpcb = pcb;
+
+  /* Tell TCP that this is the structure we wish to be passed for our
+	 callbacks. */
+  altcp_arg(pcb, ns);
+
+  /* Set up the various callback functions */
+  altcp_recv(pcb, net_recv);
+  altcp_err(pcb, net_err);
+  altcp_poll(pcb, net_poll, NET_POLL_INTERVAL);
+  altcp_sent(pcb, net_sent);
+
+  return ERR_OK;
+}
+
+/** Call tcp_write() in a loop trying smaller and smaller length
+ *
+ * @param pcb altcp_pcb to send
+ * @param ptr Data to send
+ * @param length Length of data to send (in/out: on return, contains the
+ *        amount of data sent)
+ * @param apiflags directly passed to tcp_write
+ * @return the return value of tcp_write
+ */
+static err_t
+net_write(struct altcp_pcb *pcb, const void *ptr, u16_t *length, u8_t apiflags)
+{
+  u16_t len, max_len;
+  err_t err;
+  LWIP_ASSERT("length != NULL", length != NULL);
+  len = *length;
+  if (len == 0) {
+    return ERR_OK;
+  }
+  /* We cannot send more data than space available in the send buffer. */
+  max_len = altcp_sndbuf(pcb);
+  if (max_len < len) {
+    len = max_len;
+  }
+
+  do {
+    LWIP_DEBUGF(NET_DEBUG | LWIP_DBG_TRACE, ("Trying to send %d bytes\n", len));
+    err = altcp_write(pcb, ptr, len, apiflags);
+    if (err == ERR_MEM) {
+      if ((altcp_sndbuf(pcb) == 0) ||
+          (altcp_sndqueuelen(pcb) >= TCP_SND_QUEUELEN)) {
+        /* no need to try smaller sizes */
+        len = 1;
+      } else {
+        len /= 2;
+      }
+      LWIP_DEBUGF(NET_DEBUG | LWIP_DBG_TRACE,
+                  ("Send failed, trying less (%d bytes)\n", len));
+    }
+  } while ((err == ERR_MEM) && (len > 1));
+
+  if (err == ERR_OK) {
+    LWIP_DEBUGF(NET_DEBUG | LWIP_DBG_TRACE, ("Sent %d bytes\n", len));
+    *length = len;
+  } else {
+    LWIP_DEBUGF(NET_DEBUG | LWIP_DBG_TRACE, ("Send failed with err %d (\"%s\")\n", err, lwip_strerr(err)));
+    *length = 0;
+  }
+
+  return err;
+}
+
+/** Sub-function of net_send(): This is the normal send-routine for non-ssi files
+ *
+ * @returns: - 1: data has been written (so call tcp_ouput)
+ *           - 0: no data has been written (no need to call tcp_output)
+ */
+static u8_t
+net_send_data_nonssi(struct altcp_pcb *pcb, struct net_state *ns)
+{
+  err_t err;
+  u16_t len;
+  u8_t data_to_send = 0;
+
+  /* We are not processing an SHTML file so no tag checking is necessary.
+   * Just send the data as we received it from the file. */
+  len = (u16_t)LWIP_MIN(ns->left, 0xffff);
+
+  err = net_write(pcb, ns->dto_data, &len, 0);
+  if (err == ERR_OK) {
+    data_to_send = 1;
+    ns->dto_len += len;
+    ns->left -= len;
+  }
+
+  return data_to_send;
+}
+
+/**
+ * Try to send more data on this pcb.
+ *
+ * @param pcb the pcb to send data
+ * @param hs connection state
+ */
+static u8_t
+net_send(struct altcp_pcb *pcb, struct net_state *ns)
+{
+  u8_t data_to_send = NET_NO_DATA_TO_SEND;
+
+  LWIP_DEBUGF(NET_DEBUG | LWIP_DBG_TRACE, ("net_send: pcb=%p ns=%p left=%d\n", (void *)pcb,
+              (void *)ns, ns != NULL ? (int)ns->left : 0));
+
+  /* If we were passed a NULL state structure pointer, ignore the call. */
+  if (ns == NULL) {
+    return 0;
+  }
+
+  data_to_send = net_send_data_nonssi(pcb, ns);
+
+  if (ns->left == 0) {
+    /* We reached the end of the file so this request is done.
+     * This adds the FIN flag right into the last data segment. */
+    LWIP_DEBUGF(NET_DEBUG, ("End of data.\n"));
+    return 0;
+  }
+  LWIP_DEBUGF(NET_DEBUG | LWIP_DBG_TRACE, ("send_data end.\n"));
+  return data_to_send;
+}
+
+
+/**
+ * Data has been received on this pcb.
+ * this should normally only happen once (if the request fits in one packet).
+ */
+static err_t
+net_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, err_t err)
+{
+  struct net_state *ns = (struct net_state *)arg;
+  LWIP_DEBUGF(NET_DEBUG | LWIP_DBG_TRACE, ("net_recv: pcb=%p pbuf=%p err=%s\n", (void *)pcb,
+              (void *)p, lwip_strerr(err)));
+
+  if ((err != ERR_OK) || (p == NULL) || (ns == NULL)) {
+    /* error or closed by other side? */
+    if (p != NULL) {
+      /* Inform TCP that we have taken the data. */
+      altcp_recved(pcb, p->tot_len);
+      pbuf_free(p);
+    }
+    if (ns == NULL) {
+      /* this should not happen, only to be robust */
+      LWIP_DEBUGF(NET_DEBUG, ("Error, net_recv: ns is NULL, close\n"));
+    }
+    net_close_conn(pcb, ns);
+    return ERR_OK;
+  }
+
+  /* Inform TCP that we have taken the data. */
+  altcp_recved(pcb, p->tot_len);
+
+  /* only process the data if its length is not longer than expected. otherwise just
+   * ignore it. XCP is request/response. this means that a new requests should
+   * only be processed when the response the the previous request was sent. new
+   * requests before the last response was sent can therefore also be ignored.
+   */
+  if (((p->tot_len - 4) <= BOOT_COM_NET_RX_MAX_DATA) &&
+       (ns->dto_tx_pending == BLT_FALSE))
+  {
+    /* the first 4 bytes contain a counter value in which we are not really interested */
+    XcpPacketReceived((blt_int8u*)p->payload + 4, (blt_int8u)(p->tot_len - 4));
+  }
+
+  pbuf_free(p);
+  net_send(pcb, ns);
+
+  return ERR_OK;
+}
+
+/**
+ * The pcb had an error and is already deallocated.
+ * The argument might still be valid (if != NULL).
+ */
+static void
+net_err(void *arg, err_t err)
+{
+  struct net_state *hs = (struct net_state *)arg;
+  LWIP_UNUSED_ARG(err);
+
+  LWIP_DEBUGF(NET_DEBUG, ("net_err: %s", lwip_strerr(err)));
+
+  if (hs != NULL) {
+    net_state_free(hs);
+  }
+}
+
+/**
+ * Data has been sent and acknowledged by the remote host.
+ * This means that more data can be sent.
+ */
+static err_t
+net_sent(void *arg, struct altcp_pcb *pcb, u16_t len)
+{
+  struct net_state *ns = (struct net_state *)arg;
+
+  if (ns == NULL) {
+    return ERR_OK;
+  }
+
+  ns->retries = 0;
+  ns->dto_tx_pending = 0;
+
+  net_send(pcb, ns);
+
+  return ERR_OK;
+}
+
 
 /************************************************************************************//**
 ** \brief     Initializes the TCP/IP network communication interface.
@@ -103,87 +442,19 @@ static blt_bool netInitializationDeferred = BLT_FALSE;
 ****************************************************************************************/
 void NetInit(void)
 {
-  uip_ipaddr_t ipaddr;
-
-  /* only perform the initialization if there is no request to defer it */
-  if (netInitializationDeferred == BLT_FALSE)
-  {
-    /* initialize the network device */
-    netdev_init();
-    /* initialize the timer variables */
-    periodicTimerTimeOut = TimerGet() + NET_UIP_PERIODIC_TIMER_MS;
-    ARPTimerTimeOut = TimerGet() + NET_UIP_ARP_TIMER_MS;
-    /* initialize the uIP TCP/IP stack. */
-    uip_init();
-#if (BOOT_COM_NET_DHCP_ENABLE == 0)
-    /* set the IP address */
-    uip_ipaddr(ipaddr, BOOT_COM_NET_IPADDR0, BOOT_COM_NET_IPADDR1, BOOT_COM_NET_IPADDR2,
-               BOOT_COM_NET_IPADDR3);
-    uip_sethostaddr(ipaddr);
-    /* set the network mask */
-    uip_ipaddr(ipaddr, BOOT_COM_NET_NETMASK0, BOOT_COM_NET_NETMASK1, BOOT_COM_NET_NETMASK2,
-               BOOT_COM_NET_NETMASK3);
-    uip_setnetmask(ipaddr);
-    /* set the gateway address */
-    uip_ipaddr(ipaddr, BOOT_COM_NET_GATEWAY0, BOOT_COM_NET_GATEWAY1, BOOT_COM_NET_GATEWAY2,
-               BOOT_COM_NET_GATEWAY3);
-    uip_setdraddr(ipaddr);
-#else
-    /* set the IP address */
-    uip_ipaddr(ipaddr, 0, 0, 0, 0);
-    uip_sethostaddr(ipaddr);
-    /* set the network mask */
-    uip_ipaddr(ipaddr, 0, 0, 0, 0);
-    uip_setnetmask(ipaddr);
-    /* set the gateway address */
-    uip_ipaddr(ipaddr, 0, 0, 0, 0);
-    uip_setdraddr(ipaddr);
-#endif
-    /* start listening on the configured port for XCP transfers on TCP/IP */
-    uip_listen(HTONS(BOOT_COM_NET_PORT));
-    /* initialize the MAC and set the MAC address */
-    netdev_init_mac();
-
-#if (BOOT_COM_NET_DHCP_ENABLE > 0)
-    /* initialize the DHCP client application and send the initial request. */
-    netdev_get_mac(&macAddress.addr[0]);
-    dhcpc_init(&macAddress.addr[0], 6);
-    dhcpc_request();
-#endif
-
-    /* extend the time that the backdoor is open in case the default timed backdoor
-     * mechanism is used.
-     */
-  #if (BOOT_BACKDOOR_HOOKS_ENABLE == 0)
-    if (BackDoorGetExtension() < BOOT_COM_NET_BACKDOOR_EXTENSION_MS)
-    {
-      BackDoorSetExtension(BOOT_COM_NET_BACKDOOR_EXTENSION_MS);
-    }
-  #endif /* BOOT_BACKDOOR_HOOKS_ENABLE == 0 */
-    /* set flag to indicate that we are now initialized. */
-    netInitializedFlag = BLT_TRUE;
+  struct altcp_pcb *netpcb = altcp_tcp_new_ip_type(IPADDR_TYPE_ANY);
+  LWIP_ASSERT("NetInit: tcp_new failed", netpcb != NULL);
+  if (netpcb) {
+    altcp_setprio(netpcb, TCP_PRIO_MIN);
+    /* set SOF_REUSEADDR here to explicitly bind httpd to multiple interfaces */
+    err_t err = altcp_bind(netpcb, IP_ANY_TYPE, BOOT_COM_NET_PORT);
+    LWIP_UNUSED_ARG(err); /* in case of LWIP_NOASSERT */
+    LWIP_ASSERT("NetInit: tcp_bind failed", err == ERR_OK);
+    netpcb = altcp_listen(netpcb);
+    LWIP_ASSERT("NetInit: tcp_listen failed", netpcb != NULL);
+    altcp_accept(netpcb, net_accept);
   }
 } /*** end of NetInit ***/
-
-
-#if (BOOT_COM_NET_DEFERRED_INIT_ENABLE == 1)
-/************************************************************************************//**
-** \brief     Performs a deferred initialization of the TCP/IP network communication
-**            interface.
-** \return    none.
-**
-****************************************************************************************/
-void NetDeferredInit(void)
-{
-  /* reset the request to defer the initializaton */
-  netInitializationDeferred = BLT_FALSE;
-  /* perform the initialization if not yet initialized */
-  if (netInitializedFlag == BLT_FALSE)
-  {
-    NetInit();
-  }
-} /*** end of NetDeferredInit ***/
-#endif
 
 
 /************************************************************************************//**
@@ -195,29 +466,6 @@ void NetDeferredInit(void)
 ****************************************************************************************/
 void NetTransmitPacket(blt_int8u *data, blt_int8u len)
 {
-  uip_tcp_appstate_t *s;
-  blt_int16u cnt;
-
-  /* no need to send the packet if this module is not initialized */
-  if (netInitializedFlag == BLT_TRUE)
-  {
-    /* get pointer to application state */
-    s = &(uip_conn->appstate);
-
-    /* add the dto counter first */
-    *(blt_int32u *)&(s->dto_data[0]) = s->dto_counter;
-    /* copy the actual XCP response */
-    for (cnt=0; cnt<len; cnt++)
-    {
-      s->dto_data[cnt+4] = data[cnt];
-    }
-    /* set the length of the TCP/IP packet */
-    s->dto_len = len + 4;
-    /* set the flag to request the transmission of this packet. */
-    s->dto_tx_req = BLT_TRUE;
-    /* update dto counter for the next transmission */
-    s->dto_counter++;
-  }
 } /*** end of NetTransmitPacket ***/
 
 
@@ -230,17 +478,6 @@ void NetTransmitPacket(blt_int8u *data, blt_int8u len)
 ****************************************************************************************/
 blt_bool NetReceivePacket(blt_int8u *data, blt_int8u *len)
 {
-  /* no need to check for newly received packets if this module is not initialized */
-  if (netInitializedFlag == BLT_TRUE)
-  {
-    /* run the TCP/IP server task function, which will handle the reception and
-     * transmission of XCP packets
-     */
-    NetServerTask();
-  }
-  /* packet reception and transmission is completely handled by the NetServerTask so
-   * always return BLT_FALSE here.
-   */
   return BLT_FALSE;
 } /*** end of NetReceivePacket ***/
 
@@ -253,80 +490,44 @@ blt_bool NetReceivePacket(blt_int8u *data, blt_int8u *len)
 ** \return    none.
 **
 ****************************************************************************************/
-void NetApp(void)
+void NetApp()
 {
-  uip_tcp_appstate_t *s;
-  blt_int8u *newDataPtr;
-
-  /* get pointer to application state */
-  s = &(uip_conn->appstate);
-
-  if (uip_connected())
-  {
-    /* init the dto counter and reset the pending dto data length and transmit related
-     * flags.
-     */
-    s->dto_counter = 1;
-    s->dto_len = 0;
-    s->dto_tx_req = BLT_FALSE;
-    s->dto_tx_pending = BLT_FALSE;
-    return;
-  }
-
-  if (uip_acked())
-  {
-    /* dto sent so reset the pending flag. */
-    s->dto_tx_pending = BLT_FALSE;
-  }
-
-  if (uip_rexmit())
-  {
-    /* is a dto transmission pending that should now be retransmitted? */
-    /* retransmit the currently pending dto response */
-    if (s->dto_tx_pending == BLT_TRUE)
-    {
-      /* resend the last pending dto response */
-      uip_send(s->dto_data, s->dto_len);
-    }
-  }
-
-  if (uip_poll())
-  {
-    /* check if there is a packet waiting to be transmitted. this is done via polling
-     * because then it is possible to asynchronously send data. otherwise data is
-     * only really send after a newly received packet was received.
-     */
-    if (s->dto_tx_req == BLT_TRUE)
-    {
-      /* reset the transmit request flag. */
-      s->dto_tx_req = BLT_FALSE;
-      if (s->dto_len > 0)
-      {
-        /* set the transmit pending flag. */
-        s->dto_tx_pending = BLT_TRUE;
-        /* submit the data for transmission. */
-        uip_send(s->dto_data, s->dto_len);
-      }
-    }
-  }
-
-  if (uip_newdata())
-  {
-    /* only process the data if its length is not longer than expected. otherwise just
-     * ignore it. XCP is request/response. this means that a new requests should
-     * only be processed when the response the the previous request was sent. new
-     * requests before the last response was sent can therefore also be ignored.
-     */
-    if ( ((uip_datalen() - 4) <= BOOT_COM_NET_RX_MAX_DATA) &&
-         (s->dto_tx_pending == BLT_FALSE) )
-    {
-      /* the first 4 bytes contain a counter value in which we are not really interested */
-      newDataPtr = uip_appdata;
-      XcpPacketReceived(&newDataPtr[4], (blt_int8u)(uip_datalen() - 4));
-    }
-  }
 } /*** end of NetApp ***/
 
+
+/**
+ * The poll function is called every 2nd second.
+ * If there has been no data sent (which resets the retries) in 8 seconds, close.
+ * If the last portion of a file has not been sent in 2 seconds, close.
+ *
+ * This could be increased, but we don't want to waste resources for bad connections.
+ */
+static err_t
+net_poll(void *arg, struct altcp_pcb *pcb)
+{
+  /* get pointer to application state */
+  struct net_state *ns = (struct net_state *)arg;
+
+  /* check if there is a packet waiting to be transmitted. this is done via polling
+   * because then it is possible to asynchronously send data. otherwise data is
+   * only really send after a newly received packet was received.
+   */
+  if (ns->dto_tx_req == BLT_TRUE)
+  {
+    /* reset the transmit request flag. */
+	ns->dto_tx_req = BLT_FALSE;
+    if (ns->dto_len > 0)
+    {
+      /* set the transmit pending flag. */
+      ns->dto_tx_pending = BLT_TRUE;
+      /* submit the data for transmission. */
+      net_send(pcb, ns);
+      //tcp_write(pcb, ns->dto_data, ns->dto_len, 0);
+    }
+  }
+
+  return ERR_OK;
+}
 
 /************************************************************************************//**
 ** \brief     Runs the TCP/IP server task.
@@ -335,109 +536,6 @@ void NetApp(void)
 ****************************************************************************************/
 static void NetServerTask(void)
 {
-  blt_int32u connection;
-  blt_int32u packetLen;
-
-  /* check for an RX packet and read it. */
-  packetLen = netdev_read();
-  if (packetLen > 0)
-  {
-    /* set uip_len for uIP stack usage */
-    uip_len = (blt_int16u)packetLen;
-
-    /* process incoming IP packets here. */
-    if (NET_UIP_HEADER_BUF->type == htons(UIP_ETHTYPE_IP))
-    {
-      uip_arp_ipin();
-      uip_input();
-      /* if the above function invocation resulted in data that
-       * should be sent out on the network, the global variable
-       * uip_len is set to a value > 0.
-       */
-      if (uip_len > 0)
-      {
-        uip_arp_out();
-        netdev_send();
-        uip_len = 0;
-      }
-    }
-    /* process incoming ARP packets here. */
-    else if (NET_UIP_HEADER_BUF->type == htons(UIP_ETHTYPE_ARP))
-    {
-      uip_arp_arpin();
-
-      /* if the above function invocation resulted in data that
-       * should be sent out on the network, the global variable
-       * uip_len is set to a value > 0.
-       */
-      if (uip_len > 0)
-      {
-        netdev_send();
-        uip_len = 0;
-      }
-    }
-  }
-
-  /* process TCP/IP Periodic Timer here. */
-  if (TimerGet() >= periodicTimerTimeOut)
-  {
-    periodicTimerTimeOut += NET_UIP_PERIODIC_TIMER_MS;
-    for (connection = 0; connection < UIP_CONNS; connection++)
-    {
-      uip_periodic(connection);
-      /* If the above function invocation resulted in data that
-       * should be sent out on the network, the global variable
-       * uip_len is set to a value > 0.
-       */
-      if (uip_len > 0)
-      {
-        uip_arp_out();
-        netdev_send();
-        uip_len = 0;
-      }
-    }
-
-#if UIP_UDP
-    for (connection = 0; connection < UIP_UDP_CONNS; connection++)
-    {
-      uip_udp_periodic(connection);
-      /* If the above function invocation resulted in data that
-       * should be sent out on the network, the global variable
-       * uip_len is set to a value > 0.
-       */
-      if(uip_len > 0)
-      {
-        uip_arp_out();
-        netdev_send();
-        uip_len = 0;
-      }
-    }
-#endif
-  }
-
-  /* process ARP Timer here. */
-  if (TimerGet() >= ARPTimerTimeOut)
-  {
-    ARPTimerTimeOut += NET_UIP_ARP_TIMER_MS;
-    uip_arp_timer();
-  }
-
-  /* perform polling operations here. */
-  for (connection = 0; connection < UIP_CONNS; connection++)
-  {
-    uip_poll_conn(&uip_conns[connection]);
-    /* If the above function invocation resulted in data that
-     * should be sent out on the network, the global variable
-     * uip_len is set to a value > 0.
-     */
-    if (uip_len > 0)
-    {
-      uip_arp_out();
-      netdev_send();
-      uip_len = 0;
-    }
-  }
-
 } /*** end of NetServerTask ***/
 
 #endif /* BOOT_COM_NET_ENABLE > 0 */

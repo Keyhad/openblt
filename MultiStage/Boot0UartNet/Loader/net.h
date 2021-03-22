@@ -51,6 +51,10 @@ typedef struct net_state
   blt_int16u dto_len;
   blt_bool   dto_tx_req;
   blt_bool   dto_tx_pending;
+
+  struct altcp_pcb *netpcb;
+  blt_int8u	 left;
+  blt_int8u	 retries;
 } uip_tcp_appstate_t;
 
 

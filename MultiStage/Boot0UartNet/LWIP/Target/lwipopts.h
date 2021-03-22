@@ -49,6 +49,8 @@
 /* Parameters set in STM32CubeMX LwIP Configuration GUI -*/
 /*----- Value in opt.h for LWIP_DHCP: 0 -----*/
 #define LWIP_DHCP 1
+/*----- Default Value for LWIP_ICMP: 1 ---*/
+#define LWIP_ICMP 0
 /*----- Default Value for LWIP_DNS: 0 ---*/
 #define LWIP_DNS 1
 /*----- Value in opt.h for NO_SYS: 0 -----*/
